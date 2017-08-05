@@ -1,0 +1,21 @@
+{
+  "name": "karma-jasmine-html5-reporter",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon --watch src --exec 'ts-node src/index.ts'",
+    "compile": "tsc"
+  },
+  "devDependencies": {
+    "@types/common-tags": "^1.2.5",
+    "@types/node": "^8.0.19",
+    "nodemon": "^1.11.0",
+    "ts-node": "^3.3.0",
+    "tslint": "^5.5.0",
+    "typescript": "^2.4.2"
+  },
+  "dependencies": {
+    "common-tags": "^1.4.0"
+  }
+}

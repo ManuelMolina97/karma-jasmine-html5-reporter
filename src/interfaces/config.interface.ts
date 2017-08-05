@@ -7,3 +7,7 @@ export interface ReporterConfig {
     stopAtError?: boolean;
     messages?: Message;
 }
+
+export interface KarmaReporterConfig {
+    reporterConfig: ReporterConfig;
+}

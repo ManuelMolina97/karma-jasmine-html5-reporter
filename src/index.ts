@@ -1,53 +1,69 @@
-function ManuReporter(baseReporterDecorator: Function, config: any, logger: any, helper: any, formatError: any) {
+import { ReporterConfig, KarmaReporterConfig } from "./interfaces/config.interface";
+
+function HtmlReporter(baseReporterDecorator: Function, _config: KarmaReporterConfig, logger: any, helper: any, formatError: any) {
     baseReporterDecorator(this);
 
-    this.config = config.manuReporter || {
-        success: 'Test passed',
-        fail: 'Tests failed'
+    const config: ReporterConfig = {
+        messages: {
+            failure: "Test failed",
+            skipped: "Test skipped",
+            success: "Test ok",
+            ..._config.reporterConfig.messages,
+        },
+        consoleNotifications: true,
+        htmlNotifications: false,
+        showTimings: false,
+        stopAtError: false,
+        ..._config.reporterConfig,
     };
 
-    this.adapter = function (message: string) {
+    this.adapter = function (message: string): void {
         process.stdout.write.bind(process.stdout)(`${message} \n`);
-    }
+    };
 
     this.adapters = [
-        this.adapter
+        this.adapter,
     ];
 
-    this.onRunStart = function (browsers: any) {
-        this.write('heyyyyyyyyy');
-    }
+    this.onRunStart = function (browsers: string): void {
+        this.write("heyyyyyyyyy");
+    };
 
-    this.onBrowserStart = function (browser: any) {
-        this.write(`You're using ${browser}!`)
-    }
+    this.onBrowserStart = function (browser: string): void {
+        this.write(`You're using ${browser}!`);
+    };
 
-    this.specSuccess = function (browser: any, result: any) {
-        this.write(`${this.config.success}`);
-    }
+    this.specSuccess = function (browser: string, result: any): void {
+        this.write(`${config.messages.success}`);
+    };
 
-    this.specFailure = function (browser: any, result: any) {
+    this.specFailure = function (browser: string, result: any): void {
         this.write(`${this.config.fail}`);
-    }
+    };
 
-    this.onSpecComplete = function (browser: any, result: any) {
-        if (result.skipped)
+    this.onSpecComplete = function (browser: string, result: any): void {
+        if (result.skipped) {
             this.specSkipped(browser, result);
-        else if (result.success)
+        } else if (result.success) {
             this.specSuccess(browser, result);
-        else
+        } else {
             this.specFailure(browser, result);
+        }
+
 
         this.write(`${result.description}`);
-    }
+    };
 
-    this.onRunComplete = function (brosersCollection: any, results: any) {
-        this.write('END OF ');
-    }
+    this.onRunComplete = function (brosersCollection: any, results: any): void {
+        this.write("END OF ");
+    };
 }
 
-(ManuReporter as any).$inject = ['baseReporterDecorator', 'config', 'logger', 'helper', 'formatError'];
+(HtmlReporter as any).$inject = ["baseReporterDecorator", "config", "logger", "helper", "formatError"];
 
 module.exports = {
-    'reporter:manu': ['type', ManuReporter]
-}
+    "reporter:manu": [
+        "type",
+        HtmlReporter,
+    ],
+};

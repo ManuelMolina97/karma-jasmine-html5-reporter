@@ -4,18 +4,25 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon --watch src --exec 'ts-node src/index.ts'",
-    "compile": "tsc"
+    "compile": "tsc --watch false && cp package.json dist && cp src/styles.css dist",
+    "watch": "tsc",
+    "browserify": "browserify"
   },
   "devDependencies": {
     "@types/common-tags": "^1.2.5",
+    "@types/karma": "^0.13.36",
     "@types/node": "^8.0.19",
+    "@types/promise-polyfill": "^6.0.0",
+    "@types/whatwg-fetch": "^0.0.33",
+    "browserify": "^14.4.0",
     "nodemon": "^1.11.0",
     "ts-node": "^3.3.0",
     "tslint": "^5.5.0",
     "typescript": "^2.4.2"
   },
   "dependencies": {
-    "common-tags": "^1.4.0"
+    "common-tags": "^1.4.0",
+    "promise-polyfill": "^6.0.2",
+    "whatwg-fetch": "^2.0.3"
   }
 }

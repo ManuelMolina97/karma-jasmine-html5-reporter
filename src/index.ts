@@ -1,53 +1,111 @@
-function ManuReporter(baseReporterDecorator: Function, config: any, logger: any, helper: any, formatError: any) {
+import { ConfigOptions } from "karma";
+import { KarmaCollection, CustomReporter, Browser, KarmaResult, Results } from "./karma.types";
+
+const JASMINE_CORE_PATTERN = /([\\/]karma-jasmine[\\/])/i;
+
+function createPattern(path: string) {
+    return { pattern: path, included: true, served: true, watched: false };
+}
+
+export interface Options extends ConfigOptions {
+    manuReporter: {
+
+    };
+}
+
+
+function ManuReporter(this: CustomReporter, baseReporterDecorator: Function, config: Options, logger: any, helper: any, formatError: any) {
+    // console.log(server);
     baseReporterDecorator(this);
 
     this.config = config.manuReporter || {
-        success: 'Test passed',
-        fail: 'Tests failed'
+        success: "Test passed",
+        fail: "Tests failed",
     };
+
+    let jasmineCoreIndex = 0;
+
+    baseReporterDecorator(this);
+
+    const files = config.files || [];
+
+    files.forEach((file, index) => {
+        const pattern = typeof file === "string" ? file : file.pattern;
+
+        if (JASMINE_CORE_PATTERN.test(pattern)) {
+            jasmineCoreIndex = index;
+        }
+    });
+
+    // To generate this file use:
+    // yarn browserify -- dist/polyfills.js -o dist/polyfills.b.js
+    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/polyfills.b.js"));
+    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/styles.css"));
+    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/html.js"));
+    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/adapter.js"));
 
     this.adapter = function (message: string) {
         process.stdout.write.bind(process.stdout)(`${message} \n`);
-    }
+    };
 
     this.adapters = [
-        this.adapter
+        this.adapter,
     ];
 
-    this.onRunStart = function (browsers: any) {
-        this.write('heyyyyyyyyy');
-    }
+    this.onRunStart = (browsers: KarmaCollection) => {
+        this.write("hello");
+    };
 
-    this.onBrowserStart = function (browser: any) {
-        this.write(`You're using ${browser}!`)
-    }
+    this.onBrowserStart = (browser: Browser) => {
+        /* this.write(`You're using ${browser}!`); */
+    };
 
-    this.specSuccess = function (browser: any, result: any) {
+    this.specSuccess = (browser: any, result: KarmaResult) => {
+        this.write(browser, result);
         this.write(`${this.config.success}`);
-    }
+    };
 
-    this.specFailure = function (browser: any, result: any) {
-        this.write(`${this.config.fail}`);
-    }
+    this.specFailure = (browser: any, result: KarmaResult) => {
+        /* this.write(`${this.config.fail}`); */
+    };
 
-    this.onSpecComplete = function (browser: any, result: any) {
-        if (result.skipped)
+    this.onSpecComplete = (browser: Browser, result: KarmaResult) => {
+        /* if (result.skipped) {
             this.specSkipped(browser, result);
-        else if (result.success)
+        } else if (result.success) {
             this.specSuccess(browser, result);
-        else
+
+        } else {
             this.specFailure(browser, result);
 
-        this.write(`${result.description}`);
-    }
+        }
 
-    this.onRunComplete = function (brosersCollection: any, results: any) {
-        this.write('END OF ');
-    }
+        this.write(`${result.description}`); */
+    };
+
+    this.onRunComplete = (browsersCollection: KarmaCollection, results: Results) => {
+        /* this.write("END OF "); */
+    };
+
+
 }
 
-(ManuReporter as any).$inject = ['baseReporterDecorator', 'config', 'logger', 'helper', 'formatError'];
+(ManuReporter as any).$inject = ["baseReporterDecorator", "config", "logger", "helper", "formatError"];
+
+
+function middleware(config: any) {
+    return (req: any, res: any, next: any) => {
+        if (req.url === "/config") {
+            res.setHeader("Content-Type", "application/json");
+            res.writeHead(200);
+            res.end(JSON.stringify(config));
+        } else {
+            next();
+        }
+    };
+}
 
 module.exports = {
-    'reporter:manu': ['type', ManuReporter]
-}
+    "reporter:manu": ["type", ManuReporter],
+    "middleware:manu": ["factory", middleware],
+};

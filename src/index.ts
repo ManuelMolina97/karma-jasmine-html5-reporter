@@ -1,4 +1,4 @@
-import { ConfigOptions } from "karma";
+import { KarmaReporterConfig } from "./interfaces/config.interface";
 import { KarmaCollection, CustomReporter, Browser, KarmaResult, Results } from "./karma.types";
 
 const JASMINE_CORE_PATTERN = /([\\/]karma-jasmine[\\/])/i;
@@ -7,21 +7,44 @@ function createPattern(path: string) {
     return { pattern: path, included: true, served: true, watched: false };
 }
 
-export interface Options extends ConfigOptions {
-    manuReporter: {
 
-    };
-}
-
-
-function ManuReporter(this: CustomReporter, baseReporterDecorator: Function, config: Options, logger: any, helper: any, formatError: any) {
-    // console.log(server);
+function ManuReporter(
+    this: CustomReporter,
+    baseReporterDecorator: Function,
+    config: KarmaReporterConfig,
+    logger: any,
+    helper: any,
+    formatError: any,
+) {
     baseReporterDecorator(this);
 
-    this.config = config.manuReporter || {
-        success: "Test passed",
-        fail: "Tests failed",
+    const defaultConfig = {
+        messages: {
+            failure: "Test failed",
+            skipped: "Test skipped",
+            success: "Test ok",
+        },
+        consoleNotifications: true,
+        htmlNotifications: false,
+        showTimings: false,
+        stopAtError: false,
     };
+
+    const customConfig = config.reporterConfig;
+    if (!customConfig) {
+        config.reporterConfig = defaultConfig;
+    } else {
+        config.reporterConfig = {
+            ...defaultConfig,
+            ...customConfig,
+            messages: {
+                ...defaultConfig.messages,
+                ...customConfig.messages,
+            },
+        };
+    }
+
+    this.config = config;
 
     let jasmineCoreIndex = 0;
 
@@ -60,12 +83,12 @@ function ManuReporter(this: CustomReporter, baseReporterDecorator: Function, con
         /* this.write(`You're using ${browser}!`); */
     };
 
-    this.specSuccess = (browser: any, result: KarmaResult) => {
+    this.specSuccess = (browser: Browser, result: KarmaResult) => {
         this.write(browser, result);
         this.write(`${this.config.success}`);
     };
 
-    this.specFailure = (browser: any, result: KarmaResult) => {
+    this.specFailure = (browser: Browser, result: KarmaResult) => {
         /* this.write(`${this.config.fail}`); */
     };
 

@@ -52,18 +52,6 @@ export interface Browser {
 
 export interface BaseReporter {
     adapters: any[];
-    adapter: (message: string) => void;
-    write: (...args: any[]) => void;
-    writeCommonMsg: (...args: any[]) => void;
-    onRunStart: (browsers: KarmaCollection) => void;
-    onBrowserStart: (browser: Browser) => void;
-    specSuccess: (browser: Browser, result: KarmaResult) => void;
-    specFailure: (browser: Browser, result: KarmaResult) => void;
-    onSpecComplete: (browser: Browser, result: KarmaResult) => void;
-    onRunComplete: (brosersCollection: KarmaCollection, results: Results) => void;
-    renderBrowser: (browser: Browser) => void;
-    onBrowserError: (browser: Browser, error: any) => void;
-    onBrowserLog: (browser: Browser, log: any, type: any) => void;
     USE_COLORS: boolean;
     EXCLUSIVELY_USE_COLORS: boolean;
     LOG_SINGLE_BROWSER: string;
@@ -72,7 +60,6 @@ export interface BaseReporter {
     SPEC_FAILURE: string;
     SPEC_SLOW: string;
     ERROR: string;
-
     FINISHED_ERROR: string;
     FINISHED_SUCCESS: string;
     FINISHED_DISCONNECTED: string;
@@ -81,6 +68,18 @@ export interface BaseReporter {
 
     TOTAL_SUCCESS: string;
     TOTAL_FAILED: string;
+    adapter(message: string): void;
+    write(...args: any[]): void;
+    writeCommonMsg(...args: any[]): void;
+    onRunStart(browsers: KarmaCollection): void;
+    onBrowserStart(browser: Browser): void;
+    specSuccess(browser: Browser, result: KarmaResult): void;
+    specFailure(browser: Browser, result: KarmaResult): void;
+    onSpecComplete(browser: Browser, result: KarmaResult): void;
+    onRunComplete(brosersCollection: KarmaCollection, results: Results): void;
+    renderBrowser(browser: Browser): void;
+    onBrowserError(browser: Browser, error: any): void;
+    onBrowserLog(browser: Browser, log: any, type: any): void;
 }
 
 export interface CustomReporter extends BaseReporter {

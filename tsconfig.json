@@ -18,9 +18,10 @@
         "noUnusedLocals": true,
         "noUnusedParameters": false,
         "watch": true,
+        "jsx": "react",
+        "jsxFactory": "MyJsxFactory.createElement",
         "typeRoots": [
-            "node_modules/@types",
-            "src/typings.d.ts"
+            "node_modules/@types"
         ],
         "lib": [
             "dom",
@@ -30,7 +31,8 @@
         "outDir": "dist"
     },
     "include": [
-        "src/**/*.ts"
+        "src/**/*.ts",
+        "src/**/*.tsx"
     ],
     "exclude": [
         "node_modules"

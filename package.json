@@ -13,6 +13,7 @@
     "@types/karma": "^0.13.36",
     "@types/node": "^8.0.19",
     "@types/promise-polyfill": "^6.0.0",
+    "@types/react": "^16.0.0",
     "@types/whatwg-fetch": "^0.0.33",
     "browserify": "^14.4.0",
     "nodemon": "^1.11.0",

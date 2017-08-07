@@ -20,8 +20,6 @@ jasmineRequire.HtmlReporter = function (j$: any) {
     function HtmlReporter(options: any) {
         const env = options.env || {};
         const getContainer = options.getContainer;
-        const createElement = options.createElement;
-        const createTextNode = options.createTextNode;
         const onRaiseExceptionsClick = options.onRaiseExceptionsClick || function () { };
         const timer = options.timer || noopTimer;
         // const results = [];
@@ -83,24 +81,13 @@ jasmineRequire.HtmlReporter = function (j$: any) {
             if (result.status !== "disabled") {
                 specsExecuted++;
             }
-
-            symbols.appendChild(createDom("li", {
-                className: result.status,
-                id: "spec_" + result.id,
-                title: result.fullName,
-            },
+            symbols.appendChild((
+                <li className={result.status} id={`spec_${result.id}`} title={result.fullName}> </li>
             ));
 
             if (result.status === "failed") {
                 failureCount++;
 
-                const failure =
-                    createDom("div", { className: "spec-detail failed" },
-                        createDom("div", { className: "description" },
-                            createDom("a", { title: result.fullName, href: specHref(result) }, result.fullName),
-                        ),
-                        createDom("div", { className: "messages" }),
-                    );
                 const failure = (
                     <div className="spec-detail failed">
                         <div className="description">
@@ -108,22 +95,17 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                         </div>
                         <div className="messages">
                             {
-                                result.failedExpectations.map(failedExpectation => {
-                                    return (<div className="result-message"> {failedExpectation.message} </div>
-                                        <div className="stack-trace"> {failedExpectation.stack} </div>)
-                                })
+                                result.failedExpectations.map((failedExpectation: any) => {
+                                    return (<div>
+                                        <div className="result-message"> {failedExpectation.message} </div>
+                                        <div className="stack-trace"> {failedExpectation.stack} </div>
+                                    </div>);
+                                },
+                                )
                             }
                         </div>
                     </div>
                 );
-                const messages = failure.childNodes[1];
-
-                for (let i = 0; i < result.failedExpectations.length; i++) {
-                    const expectation = result.failedExpectations[i];
-                    messages.appendChild(createDom("div", { className: "result-message" }, expectation.message));
-                    messages.appendChild(createDom("div", { className: "stack-trace" }, expectation.stack));
-                }
-
                 failures.push(failure);
             }
 
@@ -135,17 +117,16 @@ jasmineRequire.HtmlReporter = function (j$: any) {
         this.jasmineDone = function () {
             let specSuiteId = "";
             const banner = find(".banner");
-            banner.appendChild(createDom("span", { className: "duration" }, "finished in " + timer.elapsed() / 1000 + "s"));
+            console.log(banner);
+            banner.appendChild((<div className="duration"> {`Finished in: ${timer.elapsed() / 1000}s`} </div>));
 
             const alert = find(".alert");
 
-            alert.appendChild(createDom("span", { className: "exceptions" },
-                createDom("label", { className: "label", for: "raise-exceptions" }, "raise exceptions"),
-                createDom("input", {
-                    className: "raise",
-                    id: "raise-exceptions",
-                    type: "checkbox",
-                }),
+            alert.appendChild((
+                <span className="exceptions">
+                    <label className="label"> Raise exceptions </label>
+                    <input className="raise" id="raise-exceptions" type="checkbox" />
+                </span>
             ));
             const checkbox = find("input");
 
@@ -154,18 +135,19 @@ jasmineRequire.HtmlReporter = function (j$: any) {
 
             if (specsExecuted < totalSpecsDefined) {
                 const skippedMessage = "Ran " + specsExecuted + " of " + totalSpecsDefined + " specs - run all";
-                alert.appendChild(
-                    createDom("span", { className: "bar skipped" },
-                        createDom("a", { href: "?", title: "Run all specs" }, skippedMessage),
-                    ),
-                );
+                alert.appendChild((
+                    <span className="bar skipped">
+                        <a href="?" title="Run all specs"> {skippedMessage} </a>
+                    </span>
+                ));
             }
             let statusBarMessage = "" + pluralize("spec", specsExecuted) + ", " + pluralize("failure", failureCount);
             if (pendingSpecCount) { statusBarMessage += ", " + pluralize("pending spec", pendingSpecCount); }
 
             const statusBarClassName = "bar " + ((failureCount > 0) ? "failed" : "passed");
-            alert.appendChild(createDom("span", { className: statusBarClassName }, statusBarMessage));
-
+            alert.appendChild((
+                <span className={statusBarClassName}> {statusBarMessage} </span>
+            ));
             const results = find(".results");
             results.appendChild(summary);
 
@@ -178,10 +160,12 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                     if (resultNode.type === "suite") {
                         specSuiteId = resultNode.result.id;
 
-                        const suiteListNode = createDom("ul", { className: "suite", id: "suite-" + specSuiteId },
-                            createDom("li", { className: "suite-detail" },
-                                createDom("a", { href: specHref(resultNode.result) }, resultNode.result.description),
-                            ),
+                        const suiteListNode = (
+                            <ul className="suite" id={`suite-${specSuiteId}`}>
+                                <li className="suite-detail">
+                                    <a href={specHref(resultNode.result)}> {resultNode.result.description} </a>
+                                </li>
+                            </ul>
                         );
 
                         summaryList(resultNode, suiteListNode);
@@ -189,7 +173,12 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                     }
                     if (resultNode.type === "spec") {
                         if (domParent.getAttribute("class") !== "specs") {
-                            specListNode = createDom("ul", { className: "specs" });
+                            specListNode = (
+                                <ul className="specs">
+                                    <li className={resultNode.result.status} id={`spec-${resultNode.result.id}`}>
+                                        <a href={specHref(resultNode.result)}> {resultNode.result.description}</a>
+                                    </li></ul>
+                            );
                             domParent.appendChild(specListNode);
                         }
 
@@ -201,26 +190,21 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                         if (specSuiteId) {
                             attributesObj["spec-suite-id"] = specSuiteId;
                         }
-
-                        specListNode.appendChild(
-                            createDom("li", attributesObj,
-                                createDom("a", { href: specHref(resultNode.result) }, resultNode.result.description),
-                            ),
-                        );
                     }
                 }
             }
 
             if (failures.length) {
-                alert.appendChild(
-                    createDom("span", { className: "menu bar spec-list" },
-                        createDom("span", {}, "Spec List | "),
-                        createDom("a", { className: "failures-menu", href: "#" }, "Failures")));
-                alert.appendChild(
-                    createDom("span", { className: "menu bar failure-list" },
-                        createDom("a", { className: "spec-list-menu", href: "#" }, "Spec List"),
-                        createDom("span", {}, " | Failures ")));
-
+                alert.appendChild((
+                    <span className="menu bar spec-list">
+                        <span> Spec list | </span>
+                        <a className="failures-menu" href="#"> Failures </a>
+                    </span>
+                ));
+                alert.appendChild((<span className="menu bar failure-list">
+                    <a className="spec-list-menu" href="#"> Spec list </a>
+                    <span> | Failures </span>
+                </span>));
                 find(".failures-menu").onclick = function () {
                     setMenuModeTo("failure-list");
                 };
@@ -283,32 +267,6 @@ jasmineRequire.HtmlReporter = function (j$: any) {
             }
 
             return parent;
-        }
-
-        function createDom(type: any, attrs: any, ...childrenVarArgs: any[]) {
-            const el = createElement(type);
-
-            for (let i = 2; i < arguments.length; i++) {
-                const child = arguments[i];
-
-                if (typeof child === "string") {
-                    el.appendChild(createTextNode(child));
-                } else {
-                    if (child) {
-                        el.appendChild(child);
-                    }
-                }
-            }
-
-            for (const attr in attrs) {
-                if (attr === "className") {
-                    el[attr] = attrs[attr];
-                } else {
-                    el.setAttribute(attr, attrs[attr]);
-                }
-            }
-
-            return el;
         }
 
         function pluralize(singular: any, count: any) {

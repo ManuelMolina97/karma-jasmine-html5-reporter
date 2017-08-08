@@ -10,22 +10,26 @@
   },
   "devDependencies": {
     "@types/common-tags": "^1.2.5",
+    "@types/core-js": "^0.9.42",
+    "@types/gulp": "4.0.3",
+    "@types/gulp-typescript": "^2.13.0",
     "@types/karma": "^0.13.36",
     "@types/node": "^8.0.19",
     "@types/node-notifier": "^0.0.28",
     "@types/react": "^16.0.1",
     "@types/whatwg-fetch": "^0.0.33",
     "browserify": "^14.4.0",
+    "core-js": "^2.5.0",
+    "gulp": "^3.9.1",
+    "gulp-typescript": "^3.2.1",
     "nodemon": "^1.11.0",
     "ts-node": "^3.3.0",
     "tslint": "^5.6.0",
-    "typescript": "^2.4.2"
+    "typescript": "^2.4.2",
+    "whatwg-fetch": "^2.0.3"
   },
   "dependencies": {
-    "@types/core-js": "^0.9.42",
     "common-tags": "^1.4.0",
-    "core-js": "^2.5.0",
-    "node-notifier": "^5.1.2",
-    "whatwg-fetch": "^2.0.3"
+    "node-notifier": "^5.1.2"
   }
 }

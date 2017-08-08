@@ -1,6 +1,3 @@
-import PromisePolyfill from "promise-polyfill";
 import "whatwg-fetch";
-
-if (!(window as any).Promise) {
-    (window as any).Promise = PromisePolyfill;
-}
+import "core-js/es7/object";
+import "core-js/es6/promise";

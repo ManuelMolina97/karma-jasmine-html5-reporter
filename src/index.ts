@@ -62,11 +62,11 @@ function ManuReporter(
 
     // To generate this file use:
     // yarn browserify -- dist/polyfills.js -o dist/polyfills.b.js
+    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/dom.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/polyfills.b.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/styles.css"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/html.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/adapter.js"));
-    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/dom.js"));
 
     this.adapter = function (message: string) {
         process.stdout.write.bind(process.stdout)(`${message} \n`);

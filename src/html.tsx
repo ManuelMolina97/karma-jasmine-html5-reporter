@@ -34,7 +34,7 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                 <div className="html-reporter">
                     <div className="banner">
                         <span className="title">Jasmine</span>
-                        <span className="version">{value}</span>
+                        <span className="version">{j$.version}</span>
                     </div>
                     <ul className="symbol-summary" />
                     <div className="alert" />
@@ -81,9 +81,9 @@ jasmineRequire.HtmlReporter = function (j$: any) {
             if (result.status !== "disabled") {
                 specsExecuted++;
             }
-            symbols.appendChild((
-                <li className={result.status} id={`spec_${result.id}`} title={result.fullName}> </li>
-            ));
+            symbols.appendChild(
+                <li className={result.status} id={`spec_${result.id}`} title={result.fullName} />,
+            );
 
             if (result.status === "failed") {
                 failureCount++;
@@ -91,17 +91,16 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                 const failure = (
                     <div className="spec-detail failed">
                         <div className="description">
-                            <a title={result.fullName} href={specHref(result)}> {result.fullName} </a>
+                            <a title={result.fullName} href={specHref(result)}>{result.fullName}</a>
                         </div>
                         <div className="messages">
                             {
-                                result.failedExpectations.map((failedExpectation: any) => {
-                                    return (<div>
-                                        <div className="result-message"> {failedExpectation.message} </div>
-                                        <div className="stack-trace"> {failedExpectation.stack} </div>
-                                    </div>);
-                                },
-                                )
+                                result.failedExpectations.map((failedExpectation: any) => (
+                                    <div>
+                                        <div className="result-message">{failedExpectation.message}</div>
+                                        <div className="stack-trace">{failedExpectation.stack}</div>
+                                    </div>
+                                ))
                             }
                         </div>
                     </div>
@@ -117,37 +116,39 @@ jasmineRequire.HtmlReporter = function (j$: any) {
         this.jasmineDone = function () {
             let specSuiteId = "";
             const banner = find(".banner");
-            console.log(banner);
-            banner.appendChild((<div className="duration"> {`Finished in: ${timer.elapsed() / 1000}s`} </div>));
+
+            banner.appendChild(<div className="duration">{`Finished in: ${timer.elapsed() / 1000}s`}</div>);
 
             const alert = find(".alert");
 
-            alert.appendChild((
+            alert.appendChild(
                 <span className="exceptions">
-                    <label className="label"> Raise exceptions </label>
+                    <label className="label">Raise exceptions</label>
                     <input className="raise" id="raise-exceptions" type="checkbox" />
-                </span>
-            ));
+                </span>,
+            );
             const checkbox = find("input");
 
             checkbox.checked = !env.catchingExceptions();
             checkbox.onclick = onRaiseExceptionsClick;
 
             if (specsExecuted < totalSpecsDefined) {
-                const skippedMessage = "Ran " + specsExecuted + " of " + totalSpecsDefined + " specs - run all";
-                alert.appendChild((
+                const skippedMessage = `Ran ${specsExecuted}  of  ${totalSpecsDefined} specs - run all`;
+                alert.appendChild(
                     <span className="bar skipped">
-                        <a href="?" title="Run all specs"> {skippedMessage} </a>
-                    </span>
-                ));
+                        <a href="?" title="Run all specs">{skippedMessage}</a>
+                    </span>,
+                );
             }
-            let statusBarMessage = "" + pluralize("spec", specsExecuted) + ", " + pluralize("failure", failureCount);
-            if (pendingSpecCount) { statusBarMessage += ", " + pluralize("pending spec", pendingSpecCount); }
+            let statusBarMessage = `${pluralize("spec", specsExecuted)}, ${pluralize("failure", failureCount)}`;
+            if (pendingSpecCount) {
+                statusBarMessage += `", ${pluralize("pending spec", pendingSpecCount)}`;
+            }
 
-            const statusBarClassName = "bar " + ((failureCount > 0) ? "failed" : "passed");
-            alert.appendChild((
-                <span className={statusBarClassName}> {statusBarMessage} </span>
-            ));
+            const statusBarClassName = `bar ${failureCount > 0 ? "failed" : "passed"}`;
+            alert.appendChild(
+                <span className={statusBarClassName}>{statusBarMessage}</span>,
+            );
             const results = find(".results");
             results.appendChild(summary);
 
@@ -163,7 +164,7 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                         const suiteListNode = (
                             <ul className="suite" id={`suite-${specSuiteId}`}>
                                 <li className="suite-detail">
-                                    <a href={specHref(resultNode.result)}> {resultNode.result.description} </a>
+                                    <a href={specHref(resultNode.result)}>{resultNode.result.description}</a>
                                 </li>
                             </ul>
                         );
@@ -176,8 +177,9 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                             specListNode = (
                                 <ul className="specs">
                                     <li className={resultNode.result.status} id={`spec-${resultNode.result.id}`}>
-                                        <a href={specHref(resultNode.result)}> {resultNode.result.description}</a>
-                                    </li></ul>
+                                        <a href={specHref(resultNode.result)}>{resultNode.result.description}</a>
+                                    </li>
+                                </ul>
                             );
                             domParent.appendChild(specListNode);
                         }
@@ -195,16 +197,18 @@ jasmineRequire.HtmlReporter = function (j$: any) {
             }
 
             if (failures.length) {
-                alert.appendChild((
+                alert.appendChild(
                     <span className="menu bar spec-list">
-                        <span> Spec list | </span>
-                        <a className="failures-menu" href="#"> Failures </a>
-                    </span>
-                ));
-                alert.appendChild((<span className="menu bar failure-list">
-                    <a className="spec-list-menu" href="#"> Spec list </a>
-                    <span> | Failures </span>
-                </span>));
+                        <span>Spec list | </span>
+                        <a className="failures-menu" href="#">Failures</a>
+                    </span>,
+                );
+                alert.appendChild(
+                    <span className="menu bar failure-list">
+                        <a className="spec-list-menu" href="#">Spec list</a>
+                        <span> | Failures</span>
+                    </span>,
+                );
                 find(".failures-menu").onclick = function () {
                     setMenuModeTo("failure-list");
                 };
@@ -215,9 +219,7 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                 setMenuModeTo("failure-list");
 
                 const failureNode = find(".failures");
-                for (let i = 0; i < failures.length; i++) {
-                    failureNode.appendChild(failures[i]);
-                }
+                failures.forEach(failure => failureNode.appendChild(failure));
             }
 
             scrollToSpec(document.querySelector(".summary li.passed"));
@@ -269,18 +271,18 @@ jasmineRequire.HtmlReporter = function (j$: any) {
             return parent;
         }
 
-        function pluralize(singular: any, count: any) {
-            const word = (count === 1 ? singular : singular + "s");
+        function pluralize(singular: string, count: number) {
+            const word = count === 1 ? singular : singular + "s";
 
-            return "" + count + " " + word;
+            return `${count} ${word}`;
         }
 
         function specHref(result: any) {
-            return "?spec=" + encodeURIComponent(result.fullName);
+            return `?spec=${encodeURIComponent(result.fullName)}`;
         }
 
         function setMenuModeTo(mode: any) {
-            htmlReporterMain.setAttribute("class", "html-reporter " + mode);
+            htmlReporterMain.setAttribute("class", `html-reporter  ${mode}`);
         }
     }
 
@@ -342,11 +344,8 @@ jasmineRequire.QueryString = function () {
         return this;
 
         function toQueryString(paramMap: any) {
-            const qStrPairs = [];
-            for (const prop of Object.keys(paramMap)) {
-                qStrPairs.push(encodeURIComponent(prop) + "=" + encodeURIComponent(paramMap[prop]));
-            }
-            return "?" + qStrPairs.join("&");
+            const qStrPairs = Object.keys(paramMap).map(prop => `${encodeURIComponent(prop)}=${encodeURIComponent(paramMap[prop])}`);
+            return `?${qStrPairs.join("&")}`;
         }
 
         function queryStringToParamMap(): any {

@@ -1,5 +1,6 @@
 import { KarmaReporterConfig } from "./interfaces/config.interface";
 import { KarmaCollection, CustomReporter, Browser, KarmaResult, Results } from "./karma.types";
+import { NotificationService } from "./services/NotificationService";
 
 const JASMINE_CORE_PATTERN = /([\\/]karma-jasmine[\\/])/i;
 
@@ -16,7 +17,6 @@ function ManuReporter(
     helper: any,
     formatError: any,
 ) {
-    baseReporterDecorator(this);
 
     const defaultConfig = {
         messages: {
@@ -24,8 +24,8 @@ function ManuReporter(
             skipped: "Test skipped",
             success: "Test ok",
         },
-        consoleNotifications: true,
         htmlNotifications: false,
+        systemNotifications: true,
         showTimings: false,
         stopAtError: false,
     };
@@ -68,50 +68,56 @@ function ManuReporter(
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/html.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/adapter.js"));
 
-    this.adapter = function (message: string) {
-        process.stdout.write.bind(process.stdout)(`${message} \n`);
-    };
+    if (config.reporterConfig.systemNotifications) {
+        const notificationService = new NotificationService();
 
-    this.adapters = [
-        this.adapter,
-    ];
+        this.adapter = function (message: string) {
+            // notificationService.notify(message);
+            // process.stdout.write.bind(process.stdout)(`${message} \n`);
+        };
 
-    this.onRunStart = (browsers: KarmaCollection) => {
-        this.write("hello");
-    };
+        this.adapters = [
+            this.adapter,
+        ];
 
-    this.onBrowserStart = (browser: Browser) => {
-        /* this.write(`You're using ${browser}!`); */
-    };
+        this.onRunStart = (browsers: KarmaCollection) => {
+            // this.write("hello");
+        };
 
-    this.specSuccess = (browser: Browser, result: KarmaResult) => {
-        this.write(browser, result);
-        this.write(`${this.config.success}`);
-    };
+        this.onBrowserStart = (browser: Browser) => {
+            /* this.write(`You're using ${browser}!`); */
+        };
 
-    this.specFailure = (browser: Browser, result: KarmaResult) => {
-        /* this.write(`${this.config.fail}`); */
-    };
+        this.specSuccess = (browser: Browser, result: KarmaResult) => {
+            console.log("specSuccess");
+            // this.write(browser, result);
+            // this.write(`${this.config.success}`);
+        };
 
-    this.onSpecComplete = (browser: Browser, result: KarmaResult) => {
-        /* if (result.skipped) {
-            this.specSkipped(browser, result);
-        } else if (result.success) {
-            this.specSuccess(browser, result);
+        this.specFailure = (browser: Browser, result: KarmaResult) => {
+            console.log("specFail");
+            /* this.write(`${this.config.fail}`); */
+        };
 
-        } else {
-            this.specFailure(browser, result);
+        this.onSpecComplete = (browser: Browser, result: KarmaResult) => {
+            console.log("onSpecComplete");
+            notificationService.notify(result);
+            /* if (result.skipped) {
+                this.specSkipped(browser, result);
+            } else if (result.success) {
+                this.specSuccess(browser, result);
+            } else {
+                this.specFailure(browser, result);
+            }
+            this.write(`${result.description}`); */
+        };
 
-        }
+        this.onRunComplete = (browsersCollection: KarmaCollection, results: Results) => {
+            console.log("onRunComplete");
+            /* this.write("END OF "); */
+        };
 
-        this.write(`${result.description}`); */
-    };
-
-    this.onRunComplete = (browsersCollection: KarmaCollection, results: Results) => {
-        /* this.write("END OF "); */
-    };
-
-
+    }
 }
 
 (ManuReporter as any).$inject = ["baseReporterDecorator", "config", "logger", "helper", "formatError"];

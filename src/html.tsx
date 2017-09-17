@@ -2,15 +2,13 @@ declare var jasmineRequire: any;
 
 
 jasmineRequire.html = function (j$: any, config: any) {
-    console.log(config || "No config");
-
     j$.ResultsNode = jasmineRequire.ResultsNode();
-    j$.HtmlReporter = jasmineRequire.HtmlReporter(j$);
+    j$.HtmlReporter = jasmineRequire.HtmlReporter(j$, config);
     j$.QueryString = jasmineRequire.QueryString();
     j$.HtmlSpecFilter = jasmineRequire.HtmlSpecFilter();
 };
 
-jasmineRequire.HtmlReporter = function (j$: any) {
+jasmineRequire.HtmlReporter = function (j$: any, config: any) {
 
     const noopTimer = {
         start() { },
@@ -22,7 +20,6 @@ jasmineRequire.HtmlReporter = function (j$: any) {
         const getContainer = options.getContainer;
         const onRaiseExceptionsClick = options.onRaiseExceptionsClick || function () { };
         const timer = options.timer || noopTimer;
-        // const results = [];
         let specsExecuted = 0;
         let failureCount = 0;
         let pendingSpecCount = 0;
@@ -44,6 +41,23 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                 </div>
             );
             getContainer().appendChild(htmlReporterMain);
+
+            if (config.reporterConfig.htmlNotifications) {
+                if (("Notification" in window)) {
+                    Notification.requestPermission()
+                        .then(response => {
+                            if (response !== "granted") {
+                                find(".alert").appendChild((
+                                    <div className="alert"> Your html5-reporter was configured to show notifications! </div>
+                                ));
+                            }
+                        });
+                } else {
+                    find(".alert").appendChild((
+                        <div className="alert"> Your browser does not support Notifications! </div>
+                    ));
+                }
+            }
 
             symbols = find(".symbol-summary");
         };
@@ -141,8 +155,12 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                 );
             }
             let statusBarMessage = `${pluralize("spec", specsExecuted)}, ${pluralize("failure", failureCount)}`;
+
             if (pendingSpecCount) {
                 statusBarMessage += `", ${pluralize("pending spec", pendingSpecCount)}`;
+            }
+            if (config.reporterConfig.htmlNotifications) {
+                new Notification(statusBarMessage);
             }
 
             const statusBarClassName = `bar ${failureCount > 0 ? "failed" : "passed"}`;

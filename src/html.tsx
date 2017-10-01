@@ -2,15 +2,15 @@ declare var jasmineRequire: any;
 
 
 jasmineRequire.html = function (j$: any, config: any) {
-    console.log(config || "No config");
-
     j$.ResultsNode = jasmineRequire.ResultsNode();
-    j$.HtmlReporter = jasmineRequire.HtmlReporter(j$);
+    j$.HtmlReporter = jasmineRequire.HtmlReporter(j$, config);
     j$.QueryString = jasmineRequire.QueryString();
     j$.HtmlSpecFilter = jasmineRequire.HtmlSpecFilter();
 };
 
-jasmineRequire.HtmlReporter = function (j$: any) {
+jasmineRequire.HtmlReporter = function (j$: any, config: any) {
+
+    const webSocketClient = new WebSocket(`ws://localhost:${config.reporterConfig.portListening}`);
 
     const noopTimer = {
         start() { },
@@ -22,7 +22,7 @@ jasmineRequire.HtmlReporter = function (j$: any) {
         const getContainer = options.getContainer;
         const onRaiseExceptionsClick = options.onRaiseExceptionsClick || function () { };
         const timer = options.timer || noopTimer;
-        // const results = [];
+        const changeableOptions = Object.keys(config.reporterConfig).filter(option => typeof config.reporterConfig[option] === "boolean");
         let specsExecuted = 0;
         let failureCount = 0;
         let pendingSpecCount = 0;
@@ -33,8 +33,29 @@ jasmineRequire.HtmlReporter = function (j$: any) {
             htmlReporterMain = (
                 <div className="html-reporter">
                     <div className="banner">
-                        <span className="title">Jasmine</span>
-                        <span className="version">{j$.version}</span>
+                        <span className="title">Jasmine {j$.version} </span>
+                    </div>
+                    <div className="reporter-options">
+                        {
+                            changeableOptions.map(option => {
+                                const optionString = option.toString();
+                                if (config.reporterConfig[option]) {
+                                    return (
+                                        <div>
+                                            <input id={optionString} type="checkbox" checked />
+                                            <label htmlFor={optionString} > {optionString} </label>
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <div>
+                                            <input id={optionString} type="checkbox" />
+                                            <label htmlFor={optionString} > {optionString} </label>
+                                        </div>
+                                    );
+                                }
+                            })
+                        }
                     </div>
                     <ul className="symbol-summary" />
                     <div className="alert" />
@@ -44,8 +65,38 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                 </div>
             );
             getContainer().appendChild(htmlReporterMain);
+            this.addEventHandlers();
+
+            if (config.reporterConfig.htmlNotifications) {
+                if (("Notification" in window)) {
+                    Notification.requestPermission()
+                        .then(response => {
+                            if (response !== "granted") {
+                                find(".alert").appendChild((
+                                    <div className="alert"> Your html5-reporter was configured to show notifications! </div>
+                                ));
+                            }
+                        });
+                } else {
+                    find(".alert").appendChild((
+                        <div className="alert"> Your browser does not support Notifications! </div>
+                    ));
+                }
+            }
 
             symbols = find(".symbol-summary");
+        };
+
+        this.addEventHandlers = () => {
+            changeableOptions
+                .forEach(option => {
+                    const checkboxOption = find(`#${option.toString()}`);
+                    checkboxOption.addEventListener("click", () => {
+                        webSocketClient.send(JSON.stringify({
+                            [option.toString()]: checkboxOption.checked,
+                        }));
+                    });
+                });
         };
 
         let totalSpecsDefined: any;
@@ -141,8 +192,12 @@ jasmineRequire.HtmlReporter = function (j$: any) {
                 );
             }
             let statusBarMessage = `${pluralize("spec", specsExecuted)}, ${pluralize("failure", failureCount)}`;
+
             if (pendingSpecCount) {
                 statusBarMessage += `", ${pluralize("pending spec", pendingSpecCount)}`;
+            }
+            if (config.reporterConfig.htmlNotifications) {
+                new Notification(statusBarMessage);
             }
 
             const statusBarClassName = `bar ${failureCount > 0 ? "failed" : "passed"}`;
@@ -227,7 +282,7 @@ jasmineRequire.HtmlReporter = function (j$: any) {
 
         return this;
 
-        function find(selector: any) {
+        function find(selector: string) {
             return getContainer().querySelector(selector);
         }
 

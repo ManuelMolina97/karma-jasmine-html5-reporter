@@ -1,7 +1,13 @@
 import { KarmaReporterConfig } from "./interfaces/config.interface";
 import { KarmaCollection, CustomReporter, Browser, KarmaResult, Results } from "./karma.types";
+import { NotificationService } from "./services/NotificationService";
+import * as WebSocket from "ws";
+import * as http from "http";
+import * as express from "express";
 
 const JASMINE_CORE_PATTERN = /([\\/]karma-jasmine[\\/])/i;
+const app = express();
+const server = http.createServer(app);
 
 function createPattern(path: string) {
     return { pattern: path, included: true, served: true, watched: false };
@@ -16,7 +22,8 @@ function ManuReporter(
     helper: any,
     formatError: any,
 ) {
-    baseReporterDecorator(this);
+
+    const webSocketServer = new WebSocket.Server({ server });
 
     const defaultConfig = {
         messages: {
@@ -24,8 +31,8 @@ function ManuReporter(
             skipped: "Test skipped",
             success: "Test ok",
         },
-        consoleNotifications: true,
         htmlNotifications: false,
+        systemNotifications: false,
         showTimings: false,
         stopAtError: false,
     };
@@ -68,8 +75,11 @@ function ManuReporter(
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/html.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/adapter.js"));
 
+    const notificationService = new NotificationService();
+
     this.adapter = function (message: string) {
-        process.stdout.write.bind(process.stdout)(`${message} \n`);
+        // notificationService.notify(message);
+        // process.stdout.write.bind(process.stdout)(`${message} \n`);
     };
 
     this.adapters = [
@@ -77,7 +87,7 @@ function ManuReporter(
     ];
 
     this.onRunStart = (browsers: KarmaCollection) => {
-        this.write("hello");
+        // this.write("hello");
     };
 
     this.onBrowserStart = (browser: Browser) => {
@@ -85,8 +95,8 @@ function ManuReporter(
     };
 
     this.specSuccess = (browser: Browser, result: KarmaResult) => {
-        this.write(browser, result);
-        this.write(`${this.config.success}`);
+        // this.write(browser, result);
+        // this.write(`${this.config.success}`);
     };
 
     this.specFailure = (browser: Browser, result: KarmaResult) => {
@@ -94,16 +104,16 @@ function ManuReporter(
     };
 
     this.onSpecComplete = (browser: Browser, result: KarmaResult) => {
+        if (config.reporterConfig.systemNotifications) {
+            notificationService.notify(result);
+        }
         /* if (result.skipped) {
             this.specSkipped(browser, result);
         } else if (result.success) {
             this.specSuccess(browser, result);
-
         } else {
             this.specFailure(browser, result);
-
         }
-
         this.write(`${result.description}`); */
     };
 
@@ -111,7 +121,20 @@ function ManuReporter(
         /* this.write("END OF "); */
     };
 
+    server.listen(0, () => {
+        const portListening = server.address().port;
+        config.reporterConfig.portListening = portListening;
+        console.log(`Server started on port ${portListening}.`);
+    });
 
+    webSocketServer.on("connection", (webSocketConnection: WebSocket) => {
+        webSocketConnection.on("message", (propertyChanged: string) => {
+            config.reporterConfig = {
+                ...config.reporterConfig,
+                ...JSON.parse(propertyChanged),
+            };
+        });
+    });
 }
 
 (ManuReporter as any).$inject = ["baseReporterDecorator", "config", "logger", "helper", "formatError"];

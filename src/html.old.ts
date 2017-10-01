@@ -2,8 +2,6 @@ declare var jasmineRequire: any;
 
 
 jasmineRequire.html = function (j$: any, config: any) {
-    console.log(config || "No config");
-
     j$.ResultsNode = jasmineRequire.ResultsNode();
     j$.HtmlReporter = jasmineRequire.HtmlReporter(j$);
     j$.QueryString = jasmineRequire.QueryString();

@@ -84,6 +84,23 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                 }
             }
 
+            if (config.reporterConfig.htmlNotifications) {
+                if (("Notification" in window)) {
+                    Notification.requestPermission()
+                        .then(response => {
+                            if (response !== "granted") {
+                                find(".alert").appendChild((
+                                    <div className="alert"> Your html5-reporter was configured to show notifications! </div>
+                                ));
+                            }
+                        });
+                } else {
+                    find(".alert").appendChild((
+                        <div className="alert"> Your browser does not support Notifications! </div>
+                    ));
+                }
+            }
+
             symbols = find(".symbol-summary");
         };
 

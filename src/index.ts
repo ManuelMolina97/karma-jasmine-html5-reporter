@@ -1,5 +1,5 @@
 import { KarmaReporterConfig } from "./interfaces/config.interface";
-import { KarmaCollection, CustomReporter, Browser, KarmaResult, Results } from "./karma.types";
+import { KarmaCollection, CustomReporter, Browser, KarmaResult } from "./karma.types";
 import { NotificationService } from "./services/NotificationService";
 import * as WebSocket from "ws";
 import * as http from "http";
@@ -22,9 +22,7 @@ function ManuReporter(
     helper: any,
     formatError: any,
 ) {
-
     const webSocketServer = new WebSocket.Server({ server });
-
     const defaultConfig = {
         messages: {
             failure: "Test failed",
@@ -32,7 +30,7 @@ function ManuReporter(
             success: "Test ok",
         },
         htmlNotifications: false,
-        systemNotifications: false,
+        systemNotifications: true,
         showTimings: false,
         stopAtError: false,
     };
@@ -117,8 +115,18 @@ function ManuReporter(
         this.write(`${result.description}`); */
     };
 
-    this.onRunComplete = (browsersCollection: KarmaCollection, results: Results) => {
-        /* this.write("END OF "); */
+    this.onSpecComplete = (browser: Browser, result: KarmaResult) => {
+        if (config.reporterConfig.systemNotifications) {
+            notificationService.notify(result);
+        }
+        /* if (result.skipped) {
+            this.specSkipped(browser, result);
+        } else if (result.success) {
+            this.specSuccess(browser, result);
+        } else {
+            this.specFailure(browser, result);
+        }
+        this.write(`${result.description}`); */
     };
 
     server.listen(0, () => {

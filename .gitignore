@@ -5,6 +5,8 @@
 /tmp
 /out
 documentation
+src/.sass-cache/
+src/myStyles.css.map
 
 # dependencies
 /node_modules

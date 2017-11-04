@@ -18,49 +18,83 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
     };
 
     function HtmlReporter(options: any) {
+        const MAXIMUM_ITEMS_IN_COLUMN = 4;
         const env = options.env || {};
         const getContainer = options.getContainer;
         const onRaiseExceptionsClick = options.onRaiseExceptionsClick || function () { };
         const timer = options.timer || noopTimer;
         const changeableOptions = Object.keys(config.reporterConfig).filter(option => typeof config.reporterConfig[option] === "boolean");
+        const cards: Map<string, any> = new Map();
+        const succeededs: any[] = [];
+        const failures: any[] = [];
+        // const skippeds: any[] = [];
         let specsExecuted = 0;
         let failureCount = 0;
         let pendingSpecCount = 0;
         let htmlReporterMain: any;
-        let symbols: any;
 
+        function createColumns() {
+            let i = 0;
+            let isFirst = true;
+            const columns = [];
+
+            let slice = changeableOptions.slice(i, i + MAXIMUM_ITEMS_IN_COLUMN);
+
+            while (slice.length > 0) {
+                columns.push(
+                    (
+                        <div className="columns">
+                            {
+                                slice.map(option => {
+                                    const optionString = option.toString();
+                                    let div;
+                                    if (config.reporterConfig[option]) {
+                                        div = (
+                                            <div className={isFirst ? "is-offset-1 column" : "column"}>
+                                                <input id={optionString} type="checkbox" checked />
+                                                <label htmlFor={optionString} > {optionString} </label>
+                                            </div>
+                                        );
+                                    } else {
+                                        div = (
+                                            <div className={isFirst ? "is-offset-1 column" : "column"}>
+                                                <input id={optionString} type="checkbox" />
+                                                <label htmlFor={optionString} > {optionString} </label>
+                                            </div>
+                                        );
+                                    }
+                                    isFirst = false;
+                                    return div;
+                                })
+                            }
+                        </div>
+                    ),
+                );
+                i += MAXIMUM_ITEMS_IN_COLUMN;
+                isFirst = true;
+                slice = changeableOptions.slice(i, i + MAXIMUM_ITEMS_IN_COLUMN);
+            }
+
+            return columns;
+        }
         this.initialize = function () {
             htmlReporterMain = (
                 <div className="html-reporter">
                     <div className="banner">
-                        <span className="title">Jasmine {j$.version} </span>
+                        <p className="">Jasmine {j$.version} </p>
                     </div>
-                    <div className="reporter-options">
-                        {
-                            changeableOptions.map(option => {
-                                const optionString = option.toString();
-                                if (config.reporterConfig[option]) {
-                                    return (
-                                        <div>
-                                            <input id={optionString} type="checkbox" checked />
-                                            <label htmlFor={optionString} > {optionString} </label>
-                                        </div>
-                                    );
-                                } else {
-                                    return (
-                                        <div>
-                                            <input id={optionString} type="checkbox" />
-                                            <label htmlFor={optionString} > {optionString} </label>
-                                        </div>
-                                    );
-                                }
-                            })
-                        }
+                    {
+                        createColumns()
+                    }
+                    <div className="m-t-md m-b-md">
+                        <a className="button is-info is-small is-offset-3"> Show all </a>
+                        <a className="button is-success is-small is-offset-3"> Show succeeded </a>
+                        <a className="button is-danger is-small is-offset-3"> Show failed </a>
+                        <a className="button is-warning is-small is-offset-3"> Show skipped </a>
                     </div>
-                    <ul className="symbol-summary" />
-                    <div className="alert" />
+                    <div id="summary" className="has-text-centered m-b-lg" />
                     <div className="results">
-                        <div className="failures" />
+                        <div className="failures columns" />
                     </div>
                 </div>
             );
@@ -84,24 +118,6 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                 }
             }
 
-            if (config.reporterConfig.htmlNotifications) {
-                if (("Notification" in window)) {
-                    Notification.requestPermission()
-                        .then(response => {
-                            if (response !== "granted") {
-                                find(".alert").appendChild((
-                                    <div className="alert"> Your html5-reporter was configured to show notifications! </div>
-                                ));
-                            }
-                        });
-                } else {
-                    find(".alert").appendChild((
-                        <div className="alert"> Your browser does not support Notifications! </div>
-                    ));
-                }
-            }
-
-            symbols = find(".symbol-summary");
         };
 
         this.addEventHandlers = () => {
@@ -121,8 +137,6 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             totalSpecsDefined = _options.totalSpecsDefined || 0;
             timer.start();
         };
-
-        const summary = (<div className="summary"></div>);
 
         const topResults = new j$.ResultsNode({}, "", null);
         let currentParent = topResults;
@@ -144,19 +158,20 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             currentParent.addChild(result, "spec");
         };
 
-        const failures: any[] = [];
         this.specDone = function (result: any) {
+            const card = createCard(result);
             if (result.status !== "disabled") {
-                specsExecuted++;
+                ++specsExecuted;
             }
-            symbols.appendChild(
-                <li className={result.status} id={`spec_${result.id}`} title={result.fullName} />,
-            );
+
+            if (result.status === "passed") {
+                succeededs.push(card);
+            }
 
             if (result.status === "failed") {
                 failureCount++;
 
-                const failure = (
+                /*const failure = (
                     <div className="spec-detail failed">
                         <div className="description">
                             <a title={result.fullName} href={specHref(result)}>{result.fullName}</a>
@@ -172,8 +187,8 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                             }
                         </div>
                     </div>
-                );
-                failures.push(failure);
+                );*/
+                failures.push(card);
             }
 
             if (result.status === "pending") {
@@ -182,128 +197,151 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
         };
 
         this.jasmineDone = function () {
-            let specSuiteId = "";
             const banner = find(".banner");
+            const checkbox = find("input");
 
             banner.appendChild(<div className="duration">{`Finished in: ${timer.elapsed() / 1000}s`}</div>);
-
-            const alert = find(".alert");
-
-            alert.appendChild(
-                <span className="exceptions">
-                    <label className="label">Raise exceptions</label>
-                    <input className="raise" id="raise-exceptions" type="checkbox" />
-                </span>,
-            );
-            const checkbox = find("input");
 
             checkbox.checked = !env.catchingExceptions();
             checkbox.onclick = onRaiseExceptionsClick;
 
-            if (specsExecuted < totalSpecsDefined) {
-                const skippedMessage = `Ran ${specsExecuted}  of  ${totalSpecsDefined} specs - run all`;
-                alert.appendChild(
-                    <span className="bar skipped">
-                        <a href="?" title="Run all specs">{skippedMessage}</a>
-                    </span>,
-                );
-            }
             let statusBarMessage = `${pluralize("spec", specsExecuted)}, ${pluralize("failure", failureCount)}`;
 
             if (pendingSpecCount) {
                 statusBarMessage += `", ${pluralize("pending spec", pendingSpecCount)}`;
             }
+
+            const specsPassing = specsExecuted - failureCount - pendingSpecCount;
+
+            // Set boolean to check if we have permission or not.
             if (config.reporterConfig.htmlNotifications) {
                 new Notification(statusBarMessage);
             }
+            const summary = find("#summary");
+            if (specsExecuted !== 0) {
+                summary.appendChild(
+                    <span className="is-info fa-2x">{pluralize("spec", specsExecuted)} executed - </span>,
+                );
+            }
 
-            const statusBarClassName = `bar ${failureCount > 0 ? "failed" : "passed"}`;
-            alert.appendChild(
-                <span className={statusBarClassName}>{statusBarMessage}</span>,
-            );
-            const results = find(".results");
-            results.appendChild(summary);
+            if (specsPassing !== 0) {
+                summary.appendChild(
+                    <span className="is-success fa-2x">{specsPassing} <i className="fa fa-check"></i> </span>,
+                );
+            }
 
-            summaryList(topResults, summary);
+            if (failureCount !== 0) {
+                summary.appendChild(
+                    <span className="is-danger fa-2x">{failureCount} <i className="fa fa-times"></i> </span>,
+                );
+            }
 
-            function summaryList(resultsTree: any, domParent: any) {
-                let specListNode;
-                for (let i = 0; i < resultsTree.children.length; i++) {
-                    const resultNode = resultsTree.children[i];
-                    if (resultNode.type === "suite") {
-                        specSuiteId = resultNode.result.id;
-
-                        const suiteListNode = (
-                            <ul className="suite" id={`suite-${specSuiteId}`}>
-                                <li className="suite-detail">
-                                    <a href={specHref(resultNode.result)}>{resultNode.result.description}</a>
-                                </li>
-                            </ul>
-                        );
-
-                        summaryList(resultNode, suiteListNode);
-                        domParent.appendChild(suiteListNode);
-                    }
-                    if (resultNode.type === "spec") {
-                        if (domParent.getAttribute("class") !== "specs") {
-                            specListNode = (
-                                <ul className="specs">
-                                    <li className={resultNode.result.status} id={`spec-${resultNode.result.id}`}>
-                                        <a href={specHref(resultNode.result)}>{resultNode.result.description}</a>
-                                    </li>
-                                </ul>
-                            );
-                            domParent.appendChild(specListNode);
-                        }
-
-                        const attributesObj: any = {
-                            className: resultNode.result.status,
-                            id: "spec-" + resultNode.result.id,
-                        };
-
-                        if (specSuiteId) {
-                            attributesObj["spec-suite-id"] = specSuiteId;
-                        }
-                    }
-                }
+            if (pendingSpecCount !== 0) {
+                summary.appendChild(
+                    <span className="is-warning fa-2x">{pendingSpecCount} <i className="fa fa-question"></i></span>,
+                );
             }
 
             if (failures.length) {
-                alert.appendChild(
-                    <span className="menu bar spec-list">
-                        <span>Spec list | </span>
-                        <a className="failures-menu" href="#">Failures</a>
-                    </span>,
-                );
-                alert.appendChild(
-                    <span className="menu bar failure-list">
-                        <a className="spec-list-menu" href="#">Spec list</a>
-                        <span> | Failures</span>
-                    </span>,
-                );
-                find(".failures-menu").onclick = function () {
-                    setMenuModeTo("failure-list");
-                };
-                find(".spec-list-menu").onclick = function () {
-                    setMenuModeTo("spec-list");
-                };
-
-                setMenuModeTo("failure-list");
-
                 const failureNode = find(".failures");
+                succeededs.forEach(succeed => failureNode.appendChild(succeed));
                 failures.forEach(failure => failureNode.appendChild(failure));
+
+                /* cards.forEach((value, key) => {
+                    const buttonMessage = find(`#${key}message`);
+
+                    buttonMessage.addEventListener("click", () => {
+                        const message = createMessage("Error message", value.message);
+                        buttonMessage.parentNode.appendChild(message);
+                        buttonMessage.parentNode.removeChild(buttonMessage);
+                    });
+                    const buttonStack = find(`#${key}stack`);
+
+                    buttonStack.addEventListener("click", () => {
+                        const message = createMessage("Error stack", value.stack);
+                        buttonStack.parentNode.appendChild(message);
+                        buttonStack.parentNode.removeChild(buttonStack);
+                    });
+                });*/
             }
 
-            scrollToSpec(document.querySelector(".summary li.passed"));
+            // scrollToSpec(document.querySelector(".summary li.passed"));
         };
 
         return this;
+
+        function createCard(result: any) {
+            const title = result.description;
+            const status = result.status === "passed" ? "is-success" : (result.status === "failed" ? "is-danger" : "is-warning");
+            const message = { ...result.passedExpectations[0], ...result.failedExpectations[0] }.message;
+            const stack = { ...result.passedExpectations[0], ...result.failedExpectations[0] }.stack;
+            const id = result.id;
+
+            if (status === "is-danger") {
+                cards.set(id, {
+                    message,
+                    stack,
+                });
+            }
+
+            return (
+                <div className="card column is-one-quarter">
+                    <div className="card-content">
+                        <div className={`media notification ${status}`} />
+                        <div className="content has-text-centered">
+                            <p className="title is-size-7"> {title}</p>
+                            {
+                                status !== "is-success" && message ? (
+                                    createButton(id, "message", "Show error message")
+                                ) : ""
+                            }
+                            {
+                                status !== "is-success" && stack ? (
+                                    createButton(id, "stack", "Show error stack")
+                                ) : ""
+                            }
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        // FIXME - onClick not converted into onclick
+        function createButton(id: string, type: string, message: string) {
+            return (
+                <button id={`${id}${type}`} className="button is-small m-t-md m-b-xxs" onClick={e => {
+                    e.preventDefault();
+                    const button = find(`#${id}${type}`);
+                    button.parentNode.appendChild(createMessage(id, type));
+                    button.parentNode.removeChild(button);
+                }}>{message}</button>
+            );
+        }
+
+        function createMessage(id: string, type: string) {
+            return (
+                <article id={`${id}${type}`} className="message is-small">
+                    <div className="message-header">
+                        <p>{`${type} error.`}</p>
+                        <button className="delete" aria-label="delete" onClick={e => {
+                            e.preventDefault();
+                            const message = find(`#${id}${type}`);
+                            const button = createButton(id, type, type === "message" ? "Show error message" : "Show error stack");
+                            message.parentNode.appendChild(button);
+                            message.parentNode.removeChild(message);
+                        }}></button>
+                    </div>
+                    <div className="message-body">
+                        {type === "message" ? cards.get(id).message : cards.get(id).stack}
+                    </div>
+                </article>
+            );
+        }
 
         function find(selector: string) {
             return getContainer().querySelector(selector);
         }
 
-        function scrollToSpec(specEl: any) {
+        /* function scrollToSpec(specEl: any) {
             let scroll = 0;
             const windowInnerHeight = window.innerHeight;
 
@@ -323,7 +361,7 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             document.body.scrollTop = scroll;
         }
 
-        function getParentById(el: any, id: any) {
+         function getParentById(el: any, id: any) {
             let found = false,
                 parent = el;
 
@@ -341,7 +379,7 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             }
 
             return parent;
-        }
+        }*/
 
         function pluralize(singular: string, count: number) {
             const word = count === 1 ? singular : singular + "s";
@@ -349,13 +387,13 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             return `${count} ${word}`;
         }
 
-        function specHref(result: any) {
+        /* function specHref(result: any) {
             return `?spec=${encodeURIComponent(result.fullName)}`;
         }
 
         function setMenuModeTo(mode: any) {
             htmlReporterMain.setAttribute("class", `html-reporter  ${mode}`);
-        }
+        }*/
     }
 
     return HtmlReporter;

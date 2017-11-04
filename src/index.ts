@@ -13,7 +13,6 @@ function createPattern(path: string) {
     return { pattern: path, included: true, served: true, watched: false };
 }
 
-
 function ManuReporter(
     this: CustomReporter,
     baseReporterDecorator: Function,
@@ -30,7 +29,7 @@ function ManuReporter(
             success: "Test ok",
         },
         htmlNotifications: false,
-        systemNotifications: true,
+        systemNotifications: false,
         showTimings: false,
         stopAtError: false,
     };
@@ -69,9 +68,11 @@ function ManuReporter(
     // yarn browserify -- dist/polyfills.js -o dist/polyfills.b.js
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/dom.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/polyfills.b.js"));
-    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/styles.css"));
+    // files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/styles.css"));
+    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/myStyles.css"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/html.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/adapter.js"));
+    files.splice(++jasmineCoreIndex, 0, createPattern("https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"));
 
     const notificationService = new NotificationService();
 

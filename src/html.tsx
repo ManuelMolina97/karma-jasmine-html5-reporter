@@ -20,15 +20,16 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
     function HtmlReporter(options: any) {
         const MAXIMUM_CHECKBOXS_IN_COLUMN = 4;
         const MAXIMUM_CARDS_IN_COLUMN = 5;
-        const env = options.env || {};
+        // const env = options.env || {};
         const getContainer = options.getContainer;
-        const onRaiseExceptionsClick = options.onRaiseExceptionsClick || function () { };
+        // const onRaiseExceptionsClick = options.onRaiseExceptionsClick || function () { };
         const timer = options.timer || noopTimer;
         const changeableOptions = Object.keys(config.reporterConfig).filter(option => typeof config.reporterConfig[option] === "boolean");
         const cards: Map<string, any> = new Map();
         const succeededs: any[] = [];
         const failures: any[] = [];
         const skippeds: any[] = [];
+        let permissionShowNotifications = false;
         let specsExecuted = 0;
         let failureCount = 0;
         let pendingSpecCount = 0;
@@ -69,13 +70,30 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             );
             getContainer().appendChild(htmlReporterMain);
             resultsNode = find(".results");
-            this.addEventHandlers();
+        };
+
+        function addEventHandlers() {
+            changeableOptions
+                .forEach(option => {
+                    const checkboxOption = find(`#${option.toString()}`);
+                    checkboxOption.addEventListener("click", () => {
+                        webSocketClient.send(JSON.stringify({
+                            [option.toString()]: checkboxOption.checked,
+                        }));
+                    });
+                });
+        }
+
+        this.jasmineStarted = (_options: any) => {
+            addEventHandlers();
 
             if (config.reporterConfig.htmlNotifications) {
                 if (("Notification" in window)) {
                     Notification.requestPermission()
                         .then(response => {
-                            if (response !== "granted") {
+                            if (response === "granted") {
+                                permissionShowNotifications = true;
+                            } else {
                                 find(".alert").appendChild((
                                     <div className="alert"> Your html5-reporter was configured to show notifications! </div>
                                 ));
@@ -87,22 +105,6 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                     ));
                 }
             }
-
-        };
-
-        this.addEventHandlers = () => {
-            changeableOptions
-                .forEach(option => {
-                    const checkboxOption = find(`#${option.toString()}`);
-                    checkboxOption.addEventListener("click", () => {
-                        webSocketClient.send(JSON.stringify({
-                            [option.toString()]: checkboxOption.checked,
-                        }));
-                    });
-                });
-        };
-
-        this.jasmineStarted = (_options: any) => {
             timer.start();
         };
 
@@ -144,12 +146,8 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
 
         this.jasmineDone = function () {
             const banner = find(".banner");
-            const checkbox = find("input");
 
             banner.appendChild(<div className="duration">{`Finished in: ${timer.elapsed() / 1000}s`}</div>);
-
-            checkbox.checked = !env.catchingExceptions();
-            checkbox.onclick = onRaiseExceptionsClick;
 
             let statusBarMessage = `${pluralize("spec", specsExecuted)}, ${pluralize("failure", failureCount)}`;
 
@@ -159,8 +157,7 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
 
             const specsPassing = specsExecuted - failureCount - pendingSpecCount;
 
-            // Set boolean to check if we have permission or not.
-            if (config.reporterConfig.htmlNotifications) {
+            if (permissionShowNotifications) {
                 new Notification(statusBarMessage);
             }
             const summary = find("#summary");
@@ -202,7 +199,7 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             createColumns(_cards, MAXIMUM_CARDS_IN_COLUMN, createCard).forEach(column => resultsNode.appendChild(column));
         }
 
-        function createCheckbox(checkbox: any) {
+        function createCheckbox(checkbox: string) {
             const optionString = checkbox.toString();
             return (
                 <div className="is-offset-1 column">

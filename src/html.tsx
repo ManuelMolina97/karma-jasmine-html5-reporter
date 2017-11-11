@@ -18,7 +18,8 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
     };
 
     function HtmlReporter(options: any) {
-        const MAXIMUM_ITEMS_IN_COLUMN = 4;
+        const MAXIMUM_CHECKBOXS_IN_COLUMN = 4;
+        const MAXIMUM_CARDS_IN_COLUMN = 5;
         const env = options.env || {};
         const getContainer = options.getContainer;
         const onRaiseExceptionsClick = options.onRaiseExceptionsClick || function () { };
@@ -27,56 +28,12 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
         const cards: Map<string, any> = new Map();
         const succeededs: any[] = [];
         const failures: any[] = [];
-        // const skippeds: any[] = [];
+        const skippeds: any[] = [];
         let specsExecuted = 0;
         let failureCount = 0;
         let pendingSpecCount = 0;
         let htmlReporterMain: any;
 
-        function createColumns() {
-            let i = 0;
-            let isFirst = true;
-            const columns = [];
-
-            let slice = changeableOptions.slice(i, i + MAXIMUM_ITEMS_IN_COLUMN);
-
-            while (slice.length > 0) {
-                columns.push(
-                    (
-                        <div className="columns">
-                            {
-                                slice.map(option => {
-                                    const optionString = option.toString();
-                                    let div;
-                                    if (config.reporterConfig[option]) {
-                                        div = (
-                                            <div className={isFirst ? "is-offset-1 column" : "column"}>
-                                                <input id={optionString} type="checkbox" checked />
-                                                <label htmlFor={optionString} > {optionString} </label>
-                                            </div>
-                                        );
-                                    } else {
-                                        div = (
-                                            <div className={isFirst ? "is-offset-1 column" : "column"}>
-                                                <input id={optionString} type="checkbox" />
-                                                <label htmlFor={optionString} > {optionString} </label>
-                                            </div>
-                                        );
-                                    }
-                                    isFirst = false;
-                                    return div;
-                                })
-                            }
-                        </div>
-                    ),
-                );
-                i += MAXIMUM_ITEMS_IN_COLUMN;
-                isFirst = true;
-                slice = changeableOptions.slice(i, i + MAXIMUM_ITEMS_IN_COLUMN);
-            }
-
-            return columns;
-        }
         this.initialize = function () {
             htmlReporterMain = (
                 <div className="html-reporter">
@@ -84,9 +41,9 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                         <p className="">Jasmine {j$.version} </p>
                     </div>
                     {
-                        createColumns()
+                        createColumns(changeableOptions, MAXIMUM_CHECKBOXS_IN_COLUMN, createCheckbox)
                     }
-                    <div className="m-t-md m-b-md">
+                    <div className="m-t-md m-b-md m-l-md">
                         <a className="button is-info is-small is-offset-3"> Show all </a>
                         <a className="button is-success is-small is-offset-3"> Show succeeded </a>
                         <a className="button is-danger is-small is-offset-3"> Show failed </a>
@@ -94,7 +51,7 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                     </div>
                     <div id="summary" className="has-text-centered m-b-lg" />
                     <div className="results">
-                        <div className="failures columns" />
+                        <div className="failures" />
                     </div>
                 </div>
             );
@@ -132,9 +89,7 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                 });
         };
 
-        let totalSpecsDefined: any;
         this.jasmineStarted = (_options: any) => {
-            totalSpecsDefined = _options.totalSpecsDefined || 0;
             timer.start();
         };
 
@@ -159,40 +114,18 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
         };
 
         this.specDone = function (result: any) {
-            const card = createCard(result);
             if (result.status !== "disabled") {
                 ++specsExecuted;
             }
 
             if (result.status === "passed") {
-                succeededs.push(card);
-            }
-
-            if (result.status === "failed") {
-                failureCount++;
-
-                /*const failure = (
-                    <div className="spec-detail failed">
-                        <div className="description">
-                            <a title={result.fullName} href={specHref(result)}>{result.fullName}</a>
-                        </div>
-                        <div className="messages">
-                            {
-                                result.failedExpectations.map((failedExpectation: any) => (
-                                    <div>
-                                        <div className="result-message">{failedExpectation.message}</div>
-                                        <div className="stack-trace">{failedExpectation.stack}</div>
-                                    </div>
-                                ))
-                            }
-                        </div>
-                    </div>
-                );*/
-                failures.push(card);
-            }
-
-            if (result.status === "pending") {
-                pendingSpecCount++;
+                succeededs.push(result);
+            } else if (result.status === "failed") {
+                ++failureCount;
+                failures.push(result);
+            } else if (result.status === "pending") {
+                ++pendingSpecCount;
+                skippeds.push(result);
             }
         };
 
@@ -244,31 +177,24 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
 
             if (failures.length) {
                 const failureNode = find(".failures");
-                succeededs.forEach(succeed => failureNode.appendChild(succeed));
-                failures.forEach(failure => failureNode.appendChild(failure));
-
-                /* cards.forEach((value, key) => {
-                    const buttonMessage = find(`#${key}message`);
-
-                    buttonMessage.addEventListener("click", () => {
-                        const message = createMessage("Error message", value.message);
-                        buttonMessage.parentNode.appendChild(message);
-                        buttonMessage.parentNode.removeChild(buttonMessage);
-                    });
-                    const buttonStack = find(`#${key}stack`);
-
-                    buttonStack.addEventListener("click", () => {
-                        const message = createMessage("Error stack", value.stack);
-                        buttonStack.parentNode.appendChild(message);
-                        buttonStack.parentNode.removeChild(buttonStack);
-                    });
-                });*/
+                // succeededs.forEach(succeed => failureNode.appendChild(succeed));
+                createColumns(failures, MAXIMUM_CARDS_IN_COLUMN, createCard).forEach(column => failureNode.appendChild(column));
             }
 
             // scrollToSpec(document.querySelector(".summary li.passed"));
         };
 
         return this;
+
+        function createCheckbox(checkbox: any) {
+            const optionString = checkbox.toString();
+            return (
+                <div className="is-offset-1 column">
+                    <input id={optionString} type="checkbox" checked={config.reporterConfig[checkbox]} />
+                    <label htmlFor={optionString} > {optionString} </label>
+                </div>
+            );
+        }
 
         function createCard(result: any) {
             const title = result.description;
@@ -285,7 +211,7 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             }
 
             return (
-                <div className="card column is-one-quarter">
+                <div className="card column is-one-fifth">
                     <div className="card-content">
                         <div className={`media notification ${status}`} />
                         <div className="content has-text-centered">
@@ -305,7 +231,6 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                 </div>
             );
         }
-        // FIXME - onClick not converted into onclick
         function createButton(id: string, type: string, message: string) {
             return (
                 <button id={`${id}${type}`} className="button is-small m-t-md m-b-xxs" onClick={e => {
@@ -335,6 +260,29 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                     </div>
                 </article>
             );
+        }
+
+        function createColumns(elements: any[], limit: number, htmlFactory: (element: any) => any) {
+            let i = 0;
+            const columns = [];
+
+            let slice = elements.slice(i, i + limit);
+
+            while (slice.length > 0) {
+                columns.push(
+                    (
+                        <div className="columns">
+                            {
+                                slice.map(htmlFactory)
+                            }
+                        </div>
+                    ),
+                );
+                i += limit;
+                slice = elements.slice(i, i + limit);
+            }
+
+            return columns;
         }
 
         function find(selector: string) {

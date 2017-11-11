@@ -33,6 +33,7 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
         let failureCount = 0;
         let pendingSpecCount = 0;
         let htmlReporterMain: any;
+        let resultsNode: any;
 
         this.initialize = function () {
             htmlReporterMain = (
@@ -44,18 +45,30 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
                         createColumns(changeableOptions, MAXIMUM_CHECKBOXS_IN_COLUMN, createCheckbox)
                     }
                     <div className="m-t-md m-b-md m-l-md">
-                        <a className="button is-info is-small is-offset-3"> Show all </a>
-                        <a className="button is-success is-small is-offset-3"> Show succeeded </a>
-                        <a className="button is-danger is-small is-offset-3"> Show failed </a>
-                        <a className="button is-warning is-small is-offset-3"> Show skipped </a>
+                        <a className="button is-info is-small is-offset-3" onClick={e => {
+                            e.preventDefault();
+                            showCards([...succeededs, ...failures, ...skippeds]);
+                        }}> Show all </a>
+                        <a className="button is-success is-small is-offset-3" onClick={e => {
+                            e.preventDefault();
+                            showCards(succeededs);
+                        }}> Show succeeded </a>
+                        <a className="button is-danger is-small is-offset-3" onClick={e => {
+                            e.preventDefault();
+                            showCards(failures);
+                        }}> Show failed </a>
+                        <a className="button is-warning is-small is-offset-3" onClick={e => {
+                            e.preventDefault();
+                            showCards(skippeds);
+                        }}> Show skipped </a>
                     </div>
                     <div id="summary" className="has-text-centered m-b-lg" />
                     <div className="results">
-                        <div className="failures" />
                     </div>
                 </div>
             );
             getContainer().appendChild(htmlReporterMain);
+            resultsNode = find(".results");
             this.addEventHandlers();
 
             if (config.reporterConfig.htmlNotifications) {
@@ -176,15 +189,18 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             }
 
             if (failures.length) {
-                const failureNode = find(".failures");
-                // succeededs.forEach(succeed => failureNode.appendChild(succeed));
-                createColumns(failures, MAXIMUM_CARDS_IN_COLUMN, createCard).forEach(column => failureNode.appendChild(column));
+                showCards(failures);
             }
 
             // scrollToSpec(document.querySelector(".summary li.passed"));
         };
 
         return this;
+
+        function showCards(_cards: any[]) {
+            cleanResults();
+            createColumns(_cards, MAXIMUM_CARDS_IN_COLUMN, createCard).forEach(column => resultsNode.appendChild(column));
+        }
 
         function createCheckbox(checkbox: any) {
             const optionString = checkbox.toString();
@@ -283,6 +299,10 @@ jasmineRequire.HtmlReporter = function (j$: any, config: any) {
             }
 
             return columns;
+        }
+
+        function cleanResults() {
+            resultsNode.innerHTML = null;
         }
 
         function find(selector: string) {

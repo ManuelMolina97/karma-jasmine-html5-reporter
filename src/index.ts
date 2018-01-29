@@ -35,18 +35,15 @@ function ManuReporter(
     };
 
     const customConfig = config.reporterConfig;
-    if (!customConfig) {
-        config.reporterConfig = defaultConfig;
-    } else {
-        config.reporterConfig = {
-            ...defaultConfig,
-            ...customConfig,
-            messages: {
-                ...defaultConfig.messages,
-                ...customConfig.messages,
-            },
-        };
-    }
+
+    config.reporterConfig = customConfig ? {
+        ...defaultConfig,
+        ...customConfig,
+        messages: {
+            ...defaultConfig.messages,
+            ...customConfig.messages,
+        },
+    } : defaultConfig;
 
     this.config = config;
 
@@ -68,9 +65,9 @@ function ManuReporter(
     // yarn browserify -- dist/polyfills.js -o dist/polyfills.b.js
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/dom.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/polyfills.b.js"));
-    // files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/styles.css"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/myStyles.css"));
-    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/html.js"));
+    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/htmlFactory.b.js"));
+    files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/html.b.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern(__dirname + "/adapter.js"));
     files.splice(++jasmineCoreIndex, 0, createPattern("https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"));
 
@@ -154,10 +151,9 @@ function middleware(config: any) {
         if (req.url === "/config") {
             res.setHeader("Content-Type", "application/json");
             res.writeHead(200);
-            res.end(JSON.stringify(config));
-        } else {
-            next();
+            return res.end(JSON.stringify(config));
         }
+        next();
     };
 }
 
